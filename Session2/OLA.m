@@ -32,47 +32,24 @@ Lh = length(h);
 Lx = nfft - Lh +1;
 H = fft(h, nfft);   % DFT of h
 H = H(:);           % make into a column vector (speed)
-H_matrix = diag(H);
+%H_matrix = diag(H);
 nx = length(x);     % total length of x
 y = zeros(nx,1);
 
 istart = 1;
-x_frame = zeros(1,nfft);
 while istart <= nx
-    disp(istart);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Section of code to complete (5 - 10 lines) %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if Lx+istart-1 > nx 
-        rem_len = nx - istart+1;
-        x_frame = zeros(1,nfft);
-        x_frame(1:rem_len) = x(istart:istart +rem_len-1);
-        x_fft = fft(x_frame,nfft);
-        disp(size(ifft(H_matrix*x_fft')));
-        disp(size(y(istart:nx)));
-        temp_frame = ifft(H_matrix*x_fft');
-        y(istart:nx) = y(istart:nx)+temp_frame(1:rem_len);
+    segment = min(istart+Lx-1,nx);
+    x_fft = fft(x(istart:segment),nfft);
+    yseg = ifft(x_fft.*H, nfft);
+    overlap = min(istart+nfft-1,nx);
+    if overlap==nx
+        y(istart:overlap) = y(istart:overlap)+yseg(1:overlap-istart+1);
     else
-        x_frame(1:Lx) = x(istart:istart +Lx-1);
-        x_fft = fft(x_frame,nfft);
-        disp(istart+nfft-1);
-        if istart+nfft-1>nx 
-            temp_frame = ifft(H_matrix*x_fft');
-            y(istart:nx) = y(istart:nx)+temp_frame(1:nx-istart+1);
-        else
-            y(istart:istart +nfft-1) = y(istart:istart +nfft-1)+ifft(H_matrix*x_fft');
-        end
+        y(istart:overlap) = y(istart:overlap)+yseg;
     end
-    
-%     disp(size(H_matrix))
-%     disp(size(x_fft))
-%     disp(size(ifft(H_matrix*x_fft')))
-%     disp(size(y(istart:istart +nfft-1)))
-    
-    
-    
     istart = istart +Lx;
 end
-
-
 end
