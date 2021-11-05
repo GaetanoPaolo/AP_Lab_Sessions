@@ -19,33 +19,30 @@ function x = WOLA_synthesis(X,window,nfft,noverlap)
 % OUTPUT:
 %   x           : output time signal(s)
 
-
+N_half = nfft / 2 + 1;
+M = size(X,3);
 L = size(X,2);
-
+xs = zeros(N_half,L,M);
+x = zeros(L*
 % ## Perform IFFT
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Section of code to complete (1 - 3 lines) %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+for m = 1:M
+    xs(:,:,M) = ifft(X(:,:,M),N_half);
+end
 
 
 % ## Apply synthesis window
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Section of code to complete (1 - 3 lines) %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+for m = 1:M
+    xs(:,:,M) = xs(:,:,M).*window;
+end
 
 % ## Obtain re-synthesised signals
 
-for m = 0:L-1
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Section of code to complete (1 - 3 lines) %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+for m = 1:M
+    for l = 0:L-1
+        
+    end
 end
 
 end
+
+%
