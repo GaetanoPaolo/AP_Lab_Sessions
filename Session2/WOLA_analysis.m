@@ -34,7 +34,8 @@ X = zeros(N_half, L, M);
 
 for m = 0:M-1
     for l = 0:L-1 % Frame index
-        xseg = x(l*(nfft/noverlap)+1:(l+1)*(nfft/noverlap)).*window';
+        xseg = x(l*(nfft/noverlap)+1:(l+1)*(nfft + nfft/noverlap)).*window';
+        xseg = fft(xseg,nfft);
         X(:,l+1,m+1) = fft(xseg,N_half);
     end
 end
