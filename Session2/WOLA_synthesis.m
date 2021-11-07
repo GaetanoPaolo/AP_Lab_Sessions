@@ -23,7 +23,7 @@ N_half = nfft / 2 + 1;
 M = size(X,3);
 L = size(X,2);
 xs = zeros(N_half,L,M);
-x = zeros(L*
+%x = zeros(L*
 % ## Perform IFFT
 for m = 1:M
     xs(:,:,M) = ifft(X(:,:,M),N_half);
@@ -32,16 +32,22 @@ end
 
 % ## Apply synthesis window
 for m = 1:M
-    xs(:,:,M) = xs(:,:,M).*window;
+    window = window';
+    disp(size(window))
+    disp(size(repmat(window, 1,size(xs(:,:,M),2))))
+    disp(size(xs(:,:,M)))
+    
+    xs(:,:,M) = xs(:,:,M).*repmat(window, 1,size(xs(:,:,M),2));
 end
 
 % ## Obtain re-synthesised signals
 
 for m = 1:M
-    for l = 0:L-1
-        
+    for l = 2:L
+       xs(:,l,m) = xs(:,l,m)+xs(:,l-1,m);
     end
 end
+x = xs;
 
 end
 

@@ -23,10 +23,11 @@ siglength = 10;
 source_filename{1} = 'speech1.wav';
 
 % Noise flag for the noise perturbing SOE
-noiseFlag = 1;
+noiseFlag = 0;
 % Noise flag for sweetspot tests
 sweetspotFlag = 0;
-
+% Flag for OLA testing time comparison
+OLA_time = 0;
 % Number of loudspeakers
 J = size(RIR_sources,3);
 
@@ -78,9 +79,10 @@ if noiseFlag == 0
     g = H_1\x_1;
 else
     % With noise
-    dev= 0.05*std(H_1(:,1)); 
-    H_1 = H_1 + dev*randn(size(H_1));
-    g = H_1\x_1;
+    dev= 0.05*std(H_1(:,1));
+    %H_1 = awgn(H_1, 10*log10(40));
+    H_1_noise = H_1+ dev*randn(size(H_1));
+    g = H_1_noise\x_1;
 end
 
 
@@ -113,14 +115,25 @@ binaural_sig = [convL convR];
 %Synthetizing with x
 xL_1 =cat(1,zeros(3,1),x_1(1:369-3,1));
 xR_1 = x_1(370:end,1);
+tic
 convL_x = conv(speech1_cut,xL_1);
 convR_x = conv(speech1_cut,xR_1);
+toc
+if OLA_time
+    tic
+    convL_x_OLA = OLA(speech1_cut,xL_1,16384);
+    convR_x_OLA = OLA(speech1_cut,xR_1,16384);
+    toc
+    binaural_OLA = [convL_x_OLA,convR_x_OLA];
+end
+
+    
 binaural_synth_x = [convL_x convR_x];
 
 %Syntherror
 syntherror = norm(binaural_sig-binaural_synth_x);
 disp('Absolute error between given and synthetized HRTFs for generated binaural sigs')
-disp(synth_error);
+disp(syntherror);
 
 % 1.4.10
 % As the speakers are placed symetrically around the microphones, we assume

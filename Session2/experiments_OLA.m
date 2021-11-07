@@ -4,3 +4,5 @@ dirac(1) = 1;
 speech = speech(1:5*Fs);
 y = OLA(speech,dirac,128);
 disp(sum(abs(y-speech)))
+figure
+plot(1:5*Fs,y)
