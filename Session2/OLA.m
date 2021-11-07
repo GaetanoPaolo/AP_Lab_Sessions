@@ -37,6 +37,7 @@ nx = length(x);     % total length of x
 y = zeros(nx,1);
 
 istart = 1;
+
 while istart <= nx
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Section of code to complete (5 - 10 lines) %
