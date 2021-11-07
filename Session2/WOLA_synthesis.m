@@ -19,14 +19,13 @@ function x = WOLA_synthesis(X,window,nfft,noverlap)
 % OUTPUT:
 %   x           : output time signal(s)
 
-N_half = nfft / 2 + 1;
 M = size(X,3);
 L = size(X,2);
-xs = zeros(N_half,L,M);
+xs = zeros(nfft,L,M);
 %x = zeros(L*
 % ## Perform IFFT
 for m = 1:M
-    xs(:,:,M) = ifft(X(:,:,M),N_half);
+    xs(:,:,M) = ifft(X(:,:,M),nfft);
 end
 
 
@@ -41,14 +40,13 @@ for m = 1:M
 end
 
 % ## Obtain re-synthesised signals
-
+x = zeros((nfft/noverlap)*L,M);
 for m = 1:M
+    x(1:nfft,m) = xs(:,1,m);
     for l = 2:L
-       xs(:,l,m) = xs(:,l,m)+xs(:,l-1,m);
+        x(l*(nfft/noverlap)+1:l*(nfft/noverlap)+nfft)% = xs
     end
 end
-x = xs;
-
 end
 
 %
