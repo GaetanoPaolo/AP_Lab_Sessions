@@ -2,9 +2,27 @@
 speech = speech(1:5*Fs);
 nfft = 128;
 noverlap = 2;
-analwin = hann(nfft);%+1?
-%checking 
-synthwin = ones(1,nfft); 
+analwin = sqrt(hann(nfft,'periodic'));%+1?
+synthwin = sqrt(hann(nfft,'periodic')); 
+
+%checking for perfect reconstruction
+N = nfft;
+d = 2;
+D = N/d;
+sum_array = zeros(1,D);
+for i = 1:D
+    sum_win = 0;
+    for k = 0:d-1
+        sum_win = sum_win + analwin(i+k*D)*synthwin(i+k*D);
+    end
+    sum_array(i) = sum_win;
+end
+
+if sum(sum_array) == D
+    disp('Perfect reconstruction')
+else
+    disp('No perfect reconstruction')
+end
 
 
 [X,f] = WOLA_analysis(speech,Fs,analwin,nfft,noverlap);
