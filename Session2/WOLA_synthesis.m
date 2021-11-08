@@ -43,8 +43,8 @@ end
 x = zeros((nfft/noverlap)*L,M);
 for m = 1:M
     x(1:nfft,m) = xs(:,1,m);
-    for l = 2:L
-        x(l*(nfft/noverlap)+1:l*(nfft/noverlap)+nfft)% = xs
+    for l = 2:L-1
+        x(l*(nfft/noverlap)+1:l*(nfft/noverlap)+nfft) = xs(
     end
 end
 end
