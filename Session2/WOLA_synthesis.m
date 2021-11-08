@@ -31,20 +31,19 @@ end
 
 % ## Apply synthesis window
 for m = 1:M
-    window = window';
-    disp(size(window))
-    disp(size(repmat(window, 1,size(xs(:,:,M),2))))
-    disp(size(xs(:,:,M)))
+%     disp(size(window))
+%     disp(size(repmat(window, 1,size(xs(:,:,M),2))))
+%     disp(size(xs(:,:,M)))
     
     xs(:,:,M) = xs(:,:,M).*repmat(window, 1,size(xs(:,:,M),2));
 end
 
 % ## Obtain re-synthesised signals
-x = zeros((nfft/noverlap)*L,M);
+x = zeros((nfft/noverlap+1)*(L+1),M);
 for m = 1:M
     x(1:nfft,m) = xs(:,1,m);
-    for l = 2:L-1
-        x(l*(nfft/noverlap)+1:l*(nfft/noverlap)+nfft) = xs(
+    for l = 2:L
+        x((l-1)*(nfft/noverlap)+1:(l-1)*(nfft/noverlap)+nfft,m) = x((l-1)*(nfft/noverlap)+1:(l-1)*(nfft/noverlap)+nfft,m) + xs(:,l,m);
     end
 end
 end
