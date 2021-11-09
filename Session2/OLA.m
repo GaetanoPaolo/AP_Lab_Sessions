@@ -22,13 +22,6 @@ narginchk(2,3)
 
 Lh = length(h);
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Section of code to complete (1-2) lines %
-% Calculate the appropriate value of Lx, the frame length of x,
-% given your nfft and Lh
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 Lx = nfft - Lh +1;
 H = fft(h, nfft);   % DFT of h
 H = H(:);           % make into a column vector (speed)
@@ -39,9 +32,6 @@ y = zeros(nx,1);
 istart = 1;
 
 while istart <= nx
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Section of code to complete (5 - 10 lines) %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     segment = min(istart+Lx-1,nx);
     x_fft = fft(x(istart:segment),nfft);
     yseg = ifft(x_fft.*H, nfft);

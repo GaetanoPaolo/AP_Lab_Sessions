@@ -4,6 +4,7 @@ nfft = 512;
 noverlap = 2;
 analwin = sqrt(hann(nfft,'periodic'));
 synthwin = sqrt(hann(nfft,'periodic')); 
+channels = 5;
 
 %checking for perfect reconstruction
 N = nfft;
@@ -28,7 +29,8 @@ spectrogram(speech,analwin,noverlap,nfft)
 title('Spectrogram function')
 g = load('g.mat');
 g = g.g;
-speeches = repmat(speech,5);
+speeches = repmat(speech,1,channels);
+
 % WOLA analysis
 [X,f] = WOLA_analysis(speeches,Fs,analwin,nfft,noverlap,g);
 
@@ -41,11 +43,26 @@ speeches = repmat(speech,5);
 % ylabel('Freq Bins')
 % title('WOLA analysis spectrogram')
 
+load('../sim_environment/Computed_RIRs.mat')
+
 %WOLA synthesis
 x = WOLA_synthesis(X,synthwin,nfft,noverlap);
 %x_res = reshape(x',[1,size(x,1)*size(x,2)]); Is this necessary?
-hold on
-plot(1:length(x_res),speech(1:length(x_res)))
-plot(1:length(x_res),real(x_res))
-synth_error = norm(speech(1:length(x_res))-x_res')
+x = repmat(x,1,2);
+x_left = x(:,1:channels);
+x_right = x(:,channels+1:channels*2);
+synth_yeet = [x_left(:,1) x_right(:,1)];
+for j = 1:channels
+    x_left(:,j) = OLA(x_left(:,j),RIR_sources(1:400,1,j),nfft);
+end
+for j = 1:channels
+    x_right(:,j) = OLA(x_right(:,j),RIR_sources(1:400,2,j),nfft);
+end
+synth_x = [sum(x_left,2) sum(x_right,2)];
+
+
+% hold on
+% plot(1:length(x_res),speech(1:length(x_res)))
+% plot(1:length(x_res),real(x_res))
+% synth_error = norm(speech(1:length(x_res))-x_res')
 
