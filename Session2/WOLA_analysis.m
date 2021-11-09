@@ -25,7 +25,7 @@ function [X,f] = WOLA_analysis(x,fs,window,nfft,noverlap)
 N_half = nfft / 2 + 1;
 
 % get frequency vector
-f = 0:(fs / 2) / (nfft - 1):fs / 2;
+f = 0:(fs / 2) / (N_half - 1):fs / 2;
 
 % init
 L = floor((length(x) - nfft + (nfft / noverlap)) / (nfft / noverlap));
