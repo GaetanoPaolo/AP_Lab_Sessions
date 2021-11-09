@@ -85,6 +85,7 @@ else
     g = H_1_noise\x_1;
 end
 
+save('g.mat','g');
 
 % Plot estimated and real HRTFs
 figure(1);

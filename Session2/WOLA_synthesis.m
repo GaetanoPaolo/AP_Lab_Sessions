@@ -18,18 +18,14 @@ function x = WOLA_synthesis(X,window,nfft,noverlap)
 %
 % OUTPUT:
 %   x           : output time signal(s)
-
 M = size(X,3);
 L = size(X,2);
 xs = zeros(nfft,L,M);
 %x = zeros(L*
 % ## Perform IFFT
 for m = 1:M
-    for l = 1:L
-        yeet = X(2:end,l,M);
-        skeet = ifft(X(1:end,l,M),nfft);
-        xs(:,l,M) = ifft(X(1:end,l,M),nfft);
-    end
+    X_reconstr = cat(1,X(:,:,m),conj(flip(X(2:nfft/2,:,m),1)));
+    xs(:,:,m) = ifft(X_reconstr(:,:,m),nfft);
 end
 
 
