@@ -1,6 +1,6 @@
 [speech, Fs] =audioread('../Speech_Signals/speech1.wav');
 speech = speech(1:5*Fs);
-nfft = 128;
+nfft = 512;
 noverlap = 2;
 analwin = sqrt(hann(nfft,'periodic'));%+1?
 synthwin = sqrt(hann(nfft,'periodic')); 
@@ -23,8 +23,23 @@ if sum(sum_array) == D
 else
     disp('No perfect reconstruction')
 end
-
-
+figure(1)
+spectrogram(speech,analwin,noverlap,nfft)
+title('Spectrogram function')
+% WOLA analysis
 [X,f] = WOLA_analysis(speech,Fs,analwin,nfft,noverlap);
+
+%plotting spectrogram
+magn_sq = abs(X).^2;
+figure(2)
+colormap(hot)
+imagesc(magn_sq)
+xlabel('Time windows')
+ylabel('Freq Bins')
+title('WOLA analysis spectrogram')
+
+%WOLA synthesis
 x = WOLA_synthesis(X,synthwin,nfft,noverlap);
 x_res = reshape(x',[1,size(x,1)*size(x,2)]);
+
+

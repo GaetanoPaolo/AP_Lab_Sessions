@@ -25,13 +25,13 @@ function [X,f] = WOLA_analysis(x,fs,window,nfft,noverlap)
 N_half = nfft / 2 + 1;
 
 % get frequency vector
-f = 0:(fs / 2) / (N_half - 1):fs / 2;
+f = 0:(fs / 2) / (nfft - 1):fs / 2;
 
 % init
 L = floor((length(x) - nfft + (nfft / noverlap)) / (nfft / noverlap));
 M = size(x,2);
 X = zeros(N_half, L, M);
-
+X_orig = zeros(nfft, L, M);
 for m = 0:M-1
     for l = 0:L-1 % Frame index
         xseg = x((l*nfft/noverlap)+1:(l*(nfft/noverlap)+nfft)).*window;
@@ -39,7 +39,8 @@ for m = 0:M-1
 %       disp(size(x(l*(nfft/noverlap)+1:(l+1)*(nfft/noverlap))))
 %       disp(size(window))
 %       xseg = x(l*(nfft/noverlap)+1:(l+1)*(nfft/noverlap)).*window;
-%       disp(size(xseg))
+        %disp(xseg)
+        X_orig(:,l+1,m+1) = xseg;
         X(:,l+1,m+1) = xseg(1:N_half);
     end
 end
