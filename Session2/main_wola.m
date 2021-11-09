@@ -1,8 +1,8 @@
 [speech, Fs] =audioread('../Speech_Signals/speech1.wav');
-speech = speech(1:5*Fs);
+speech = speech(1:10*Fs);
 nfft = 128;
 noverlap = 2;
-analwin = sqrt(hann(nfft,'periodic'));%+1?
+analwin = sqrt(hann(nfft,'periodic'));
 synthwin = sqrt(hann(nfft,'periodic')); 
 
 %checking for perfect reconstruction
@@ -28,3 +28,8 @@ end
 [X,f] = WOLA_analysis(speech,Fs,analwin,nfft,noverlap);
 x = WOLA_synthesis(X,synthwin,nfft,noverlap);
 x_res = reshape(x',[1,size(x,1)*size(x,2)]);
+hold on
+plot(1:length(x_res),speech(1:length(x_res)))
+plot(1:length(x_res),real(x_res))
+synth_error = norm(speech(1:length(x_res))-x_res')
+

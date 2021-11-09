@@ -25,7 +25,11 @@ xs = zeros(nfft,L,M);
 %x = zeros(L*
 % ## Perform IFFT
 for m = 1:M
-    xs(:,:,M) = ifft(X(:,:,M),nfft);
+    for l = 1:L
+        yeet = X(2:end,l,M);
+        skeet = ifft(X(1:end,l,M),nfft);
+        xs(:,l,M) = ifft(X(1:end,l,M),nfft);
+    end
 end
 
 
@@ -39,7 +43,7 @@ for m = 1:M
 end
 
 % ## Obtain re-synthesised signals
-x = zeros((nfft/noverlap+1)*(L+1),M);
+x = zeros((nfft/noverlap)*(L-1)+nfft,M);
 for m = 1:M
     x(1:nfft,m) = xs(:,1,m);
     for l = 2:L
