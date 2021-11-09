@@ -32,8 +32,8 @@ OLA_time = 0;
 J = size(RIR_sources,3);
 
 % Define the lengths of RIRs and g filters
-Lh = 400; % Length of impulse responses of listening room
-% Lg = ;      % Length of filters g_j
+Lh = 4000; % Length of impulse responses of listening room
+Lg = 2*(Lh-1)/(J-2);      % Length of filters g_j
 
 % Truncate impulse response to reduce computational complexity
 
@@ -45,11 +45,11 @@ Lh = 400; % Length of impulse responses of listening room
 HL =[];
 HR = [];
 for j = 1:speaker
-    temp_mat = toeplitz(RIR_sources(1:400,1,j),zeros(266,1));
+    temp_mat = toeplitz(RIR_sources(1:Lh,1,j),zeros(Lg,1));
     HL = [HL temp_mat];
 end
 for j = 1:speaker
-    temp_mat = toeplitz(RIR_sources(1:400,2,j),zeros(266,1));
+    temp_mat = toeplitz(RIR_sources(1:Lh,2,j),zeros(Lg,1));
     HR = [HR temp_mat];
 end
         
@@ -61,8 +61,8 @@ end
 xL_undelayed = HRTF(:,1); % Left ear
 xR_undelayed = HRTF(:,2); % Right ear
 Delta=ceil(sqrt(room_dim(1)^2+room_dim(2)^2)*fs_RIR/340);
-xL_delayed = cat(1,zeros(Delta,1),xL_undelayed(Delta+1:400,1));
-xR_delayed = cat(1,zeros(Delta,1),xR_undelayed(Delta+1:400,1));
+xL_delayed = cat(1,zeros(Delta,1),xL_undelayed(Delta+1:Lh,1));
+xR_delayed = cat(1,zeros(Delta,1),xR_undelayed(Delta+1:Lh,1));
 % Construct H (from HL and HR) and x (from xL and xR) and remove all-zero rows in H, and the corresponding elements in x
 H = cat(1,HL,HR);
 x = cat(1,xL_delayed,xR_delayed);
@@ -104,8 +104,8 @@ speech1 = audioread('../Speech_Signals/speech1.wav');
 speech1_res = resample(speech1,8000,44100);
 speech1_cut = speech1_res(1:10*8000);
 transf_tot = H_1*g;
-transf_L = transf_tot(1:369,:);
-transf_R = transf_tot(370:end,:);
+transf_L = transf_tot(1:length(transf_tot)/2,:);
+transf_R = transf_tot(length(transf_tot)/2+1:end,:);
 convL = conv(speech1_cut,transf_L);
 convR = conv(speech1_cut,transf_R);
 binaural_sig = [convL convR];
@@ -114,8 +114,8 @@ binaural_sig = [convL convR];
 % (psychoacoustically) to the binaural speech synthetized with x
 
 %Synthetizing with x
-xL_1 =cat(1,zeros(3,1),x_1(1:369-3,1));
-xR_1 = x_1(370:end,1);
+xL_1 =cat(1,zeros(3,1),x_1(1:(length(transf_tot)/2)-3,1));
+xR_1 = x_1((length(transf_tot)/2)+1:end,1);
 tic
 convL_x = conv(speech1_cut,xL_1);
 convR_x = conv(speech1_cut,xR_1);
@@ -157,11 +157,11 @@ if sweetspotFlag == 1
         HL_new =[];
         HR_new = [];
         for j = 1:speaker_new
-            temp_mat = toeplitz(RIR_sources_new(1:400,1,j),zeros(266,1));
+            temp_mat = toeplitz(RIR_sources_new(1:Lh,1,j),zeros(Lg,1));
             HL_new = [HL_new temp_mat];
         end
         for j = 1:speaker_new
-            temp_mat = toeplitz(RIR_sources_new(1:400,2,j),zeros(266,1));
+            temp_mat = toeplitz(RIR_sources_new(1:Lh,2,j),zeros(Lg,1));
             HR_new = [HR_new temp_mat];
         end
         H_new = cat(1,HL_new,HR_new);

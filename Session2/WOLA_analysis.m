@@ -38,7 +38,7 @@ for m = 0:M-1
     G = fft(g(m*g_size+1:(m+1)*g_size),nfft);
     for l = 0:L-1 % Frame index
         xseg = x((l*nfft/noverlap)+1:(l*(nfft/noverlap)+nfft),m+1).*window;
-        xseg = fft(xseg,nfft);
+        xseg = fft(xseg,nfft).*G;
 %       disp(size(x(l*(nfft/noverlap)+1:(l+1)*(nfft/noverlap))))
 %       disp(size(window))
 %       xseg = x(l*(nfft/noverlap)+1:(l+1)*(nfft/noverlap)).*window;
