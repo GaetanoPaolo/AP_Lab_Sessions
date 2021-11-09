@@ -1,0 +1,12 @@
+%% 1.4.9 
+% No, due to the physical distance the soundwaves will always first arrive
+% at the left ear, no matter their output
+
+
+
+% 1.4.10
+% As the speakers are placed symetrically around the microphones, we assume
+% a symmetric effect of movement and consider the right (= upward in GUI)
+% movement of the speaker by steps of 10cm.
+% The testing consits of computing the normalized error (like the syntherror) for each distance
+% shift with the original centered microphone setup

@@ -25,31 +25,32 @@ source_filename{1} = 'speech1.wav';
 % Noise flag for the noise perturbing SOE
 noiseFlag = 0;
 % Noise flag for sweetspot tests
-sweetspotFlag = 0;
+sweetspotFlag = 1;
 % Flag for OLA testing time comparison
 OLA_time = 0;
 % Number of loudspeakers
 J = size(RIR_sources,3);
 
 % Define the lengths of RIRs and g filters
-Lh = 4000; % Length of impulse responses of listening room
+Lh = 400; % Length of impulse responses of listening room
 Lg = 2*(Lh-1)/(J-2);      % Length of filters g_j
 
 % Truncate impulse response to reduce computational complexity
-
+RIR = RIR_sources(1:Lh,:,:);
 
 % Calculate delay for SOE
+Delta=ceil(sqrt(room_dim(1)^2+room_dim(2)^2)*fs_RIR/340);
 
 % Define the Toeplitz matrices for left and right ear (left side of SOE)
 [~,mic,speaker] = size(RIR_sources);
 HL =[];
 HR = [];
 for j = 1:speaker
-    temp_mat = toeplitz(RIR_sources(1:Lh,1,j),zeros(Lg,1));
+    temp_mat = toeplitz(RIR(:,1,j),zeros(Lg,1));
     HL = [HL temp_mat];
 end
 for j = 1:speaker
-    temp_mat = toeplitz(RIR_sources(1:Lh,2,j),zeros(Lg,1));
+    temp_mat = toeplitz(RIR(:,2,j),zeros(Lg,1));
     HR = [HR temp_mat];
 end
         
@@ -60,9 +61,9 @@ end
 % loaded HRTF
 xL_undelayed = HRTF(:,1); % Left ear
 xR_undelayed = HRTF(:,2); % Right ear
-Delta=ceil(sqrt(room_dim(1)^2+room_dim(2)^2)*fs_RIR/340);
 xL_delayed = cat(1,zeros(Delta,1),xL_undelayed(Delta+1:Lh,1));
 xR_delayed = cat(1,zeros(Delta,1),xR_undelayed(Delta+1:Lh,1));
+
 % Construct H (from HL and HR) and x (from xL and xR) and remove all-zero rows in H, and the corresponding elements in x
 H = cat(1,HL,HR);
 x = cat(1,xL_delayed,xR_delayed);
@@ -80,7 +81,6 @@ if noiseFlag == 0
 else
     % With noise
     dev= 0.05*std(H_1(:,1));
-    %H_1 = awgn(H_1, 10*log10(40));
     H_1_noise = H_1+ dev*randn(size(H_1));
     g = H_1_noise\x_1;
 end
@@ -93,12 +93,17 @@ hold on
 plot(1:size(x_1,1),x_1);
 plot(1:size(x_1,1),H_1*g);
 legend('x','H*g');
+title('Approximated and real HRTFs')
 
 
 % Calculate synthesis error
 synth_error=norm(H_1*g-x_1);
-disp('Absolute error between given and synthetized HRTFs')
+disp('Norm of error between given and synthetized HRTFs')
 disp(synth_error);
+
+% Synthethize the binaural speech using H and g and compare it
+% (psychoacoustically) to the binaural speech synthetized with x
+
 % importing speech signal
 speech1 = audioread('../Speech_Signals/speech1.wav');
 speech1_res = resample(speech1,8000,44100);
@@ -110,10 +115,7 @@ convL = conv(speech1_cut,transf_L);
 convR = conv(speech1_cut,transf_R);
 binaural_sig = [convL convR];
 
-% Synthethize the binaural speech using H and g and compare it
-% (psychoacoustically) to the binaural speech synthetized with x
-
-%Synthetizing with x
+%(Synthetizing with the original HRTF's contained in X (rhs of SOE))
 xL_1 =cat(1,zeros(3,1),x_1(1:(length(transf_tot)/2)-3,1));
 xR_1 = x_1((length(transf_tot)/2)+1:end,1);
 tic
@@ -131,19 +133,13 @@ end
     
 binaural_synth_x = [convL_x convR_x];
 
-%Syntherror
-syntherror = norm(binaural_sig-binaural_synth_x);
+%Norm of the error between generated binaural sigs
+normerror = norm(binaural_sig-binaural_synth_x);
 disp('Absolute error between given and synthetized HRTFs for generated binaural sigs')
-disp(syntherror);
+disp(normerror);
 
-% 1.4.10
-% As the speakers are placed symetrically around the microphones, we assume
-% a symmetric effect of movement and consider the right (= upward in GUI)
-% movement of the speaker by steps of 10cm.
-% The testing consits of computing the normalized error (like the syntherror) for each distance
-% shift with the original centered microphone setup
-
-norm_errors =zeros(1,10);
+% Checking the sweetspot for 
+synth_errors =zeros(1,10);
 if sweetspotFlag == 1
     for i = 1:10
         %either bring the mics horizontally further away from the sources
@@ -168,18 +164,13 @@ if sweetspotFlag == 1
         idx_nonzeroslines = sum(abs(H_new),2)> 0;
         H_1_new = H_new(idx_nonzeroslines,:);
         transf_tot_new = H_1_new*g;
-        transf_L_new = transf_tot_new(1:369,:);
-        transf_R_new = transf_tot_new(370:738,:);
-        convL_new = conv(speech1_cut,transf_L_new);
-        convR_new = conv(speech1_cut,transf_R_new);
-        binaural_sig_new = [convL_new convR_new];
-        norm_errors(i) = norm(binaural_sig-binaural_sig_new);
+        synth_errors(i) = norm(transf_tot_new(1:738)-x_1);
     end
     figure
-    plot(1:10,norm_errors)
-    title('Normalized error between binaural signals')
-    xlabel('cm')
-    ylabel('abs val')
+    plot(1:10,synth_errors)
+    title('synth error between synth and original HRTFs')
+    xlabel('Horiz shift of mics [cm]')
+    ylabel('Norm')
 end
 %% 1.4.8
 % Speech1
@@ -218,6 +209,7 @@ binaurals_sig2_2 = [0.5*x x];
 binaurals_sig3_2 = [cat(1,zeros(3,1),x(1:end-3,1)) x];
 x_left_g = fftfilt(g,x);
 x_right_g = fftfilt(g,x);
+
 %filtering RIR left
 filt_speech_left = zeros(80000,1);
 for i =1:speaker_amount
@@ -234,16 +226,14 @@ end
 
 x_right_gh = filt_speech_right;
 binaurals_sig4_2 = [x_left_gh x_right_gh];
-% Copypasta
+
+
 binaurals_sig1=binaurals_sig1_1+binaurals_sig1_2;
 binaurals_sig2=binaurals_sig2_1+binaurals_sig2_2;
 binaurals_sig3=binaurals_sig3_1+binaurals_sig3_2;
 binaurals_sig4=binaurals_sig4_1+binaurals_sig4_2;
 %soundsc(binaurals_sig4_2, f_res)
 
-%% 1.4.9 
-% No, due to the physical distance the soundwaves will always first arrive
-% at the left ear, no matter their output
 
 
 
