@@ -25,7 +25,7 @@ xs = zeros(nfft,L,M);
 % ## Perform IFFT
 for m = 1:M
     X_reconstr = cat(1,X(:,:,m),conj(flip(X(2:nfft/2,:,m),1)));
-    xs(:,:,m) = ifft(X_reconstr(:,:,m),nfft);
+    xs(:,:,m) = ifft(X_reconstr(:,:),nfft);
 end
 
 

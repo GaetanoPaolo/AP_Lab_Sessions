@@ -28,22 +28,22 @@ spectrogram(speech,analwin,noverlap,nfft)
 title('Spectrogram function')
 g = load('g.mat');
 g = g.g;
-gspot = g(1:266);
+speeches = repmat(speech,5);
 % WOLA analysis
-[X,f] = WOLA_analysis(speech,Fs,analwin,nfft,noverlap,gspot);
+[X,f] = WOLA_analysis(speeches,Fs,analwin,nfft,noverlap,g);
 
 %plotting spectrogram
-magn_sq = abs(X).^2;
-figure(2)
-colormap(hot)
-imagesc(magn_sq)
-xlabel('Time windows')
-ylabel('Freq Bins')
-title('WOLA analysis spectrogram')
+% magn_sq = abs(X).^2;
+% figure(2)
+% colormap(hot)
+% imagesc(magn_sq)
+% xlabel('Time windows')
+% ylabel('Freq Bins')
+% title('WOLA analysis spectrogram')
 
 %WOLA synthesis
 x = WOLA_synthesis(X,synthwin,nfft,noverlap);
-x_res = reshape(x',[1,size(x,1)*size(x,2)]);
+%x_res = reshape(x',[1,size(x,1)*size(x,2)]); Is this necessary?
 hold on
 plot(1:length(x_res),speech(1:length(x_res)))
 plot(1:length(x_res),real(x_res))
