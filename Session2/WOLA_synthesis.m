@@ -21,7 +21,6 @@ function x = WOLA_synthesis(X,window,nfft,noverlap)
 M = size(X,3);
 L = size(X,2);
 xs = zeros(nfft,L,M);
-%x = zeros(L*
 % ## Perform IFFT
 for m = 1:M
     X_reconstr = cat(1,X(:,:,m),conj(flip(X(2:nfft/2,:,m),1)));
@@ -31,10 +30,6 @@ end
 
 % ## Apply synthesis window
 for m = 1:M
-%     disp(size(window))
-%     disp(size(repmat(window, 1,size(xs(:,:,M),2))))
-%     disp(size(xs(:,:,M)))
-    
     xs(:,:,M) = xs(:,:,M).*repmat(window, 1,size(xs(:,:,M),2));
 end
 
