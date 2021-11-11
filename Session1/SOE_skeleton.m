@@ -85,7 +85,7 @@ else
     g = H_1_noise\x_1;
 end
 
-save('g.mat','g');
+%save('g.mat','g');
 
 % Plot estimated and real HRTFs
 figure(1);
@@ -108,6 +108,8 @@ disp(synth_error);
 speech1 = audioread('../Speech_Signals/speech1.wav');
 speech1_res = resample(speech1,8000,44100);
 speech1_cut = speech1_res(1:10*8000);
+
+%wiith standard conv
 transf_tot = H_1*g;
 transf_L = transf_tot(1:length(transf_tot)/2,:);
 transf_R = transf_tot(length(transf_tot)/2+1:end,:);
@@ -115,6 +117,55 @@ convL = conv(speech1_cut,transf_L);
 convR = conv(speech1_cut,transf_R);
 binaural_sig = [convL convR];
 
+%with OLA
+nfft = 512;
+convL_x_OLA = OLA(speech1_cut,transf_L,nfft);
+convR_x_OLA = OLA(speech1_cut,transf_R,nfft);
+binaural_sig_OLA = [convL_x_OLA,convR_x_OLA];
+
+%with WOLA
+noverlap = 2;
+analwin = sqrt(hann(nfft,'periodic'));
+synthwin = sqrt(hann(nfft,'periodic')); 
+channels = 5;
+speeches = repmat(speech1_cut,1,channels);
+[X,f] = WOLA_analysis(speeches,fs_RIR,analwin,nfft,noverlap,g);
+x = WOLA_synthesis(X,synthwin,nfft,noverlap);
+x = repmat(x,1,2);
+x_left = x(:,1:channels);
+x_right = x(:,channels+1:channels*2);
+synth_yeet = [x_left(:,1) x_right(:,1)];
+for j = 1:channels
+    x_left(:,j) = OLA(x_left(:,j),RIR_sources(1:400,1,j),nfft);
+end
+for j = 1:channels
+    x_right(:,j) = OLA(x_right(:,j),RIR_sources(1:400,2,j),nfft);
+end
+binaural_sig_WOLA = [sum(x_left,2) sum(x_right,2)];
+
+%plotting the signals
+time = min([size(binaural_sig,1),size(binaural_sig_OLA,1),size(binaural_sig_WOLA,1)]);
+figure
+subplot(2,1,1)
+title('Different filter methods for left ear')
+hold on
+plot(1:time,binaural_sig_WOLA(1:time,1))
+plot(1:time,binaural_sig(1:time,1))
+plot(1:time,binaural_sig_OLA(1:time,1))
+hold off
+xlabel('timesamples')
+ylabel('Signal amplitude')
+legend('WOLA','time domain convolution','OLA')
+subplot(2,1,2)
+title('Different filter methods for right ear')
+hold on
+plot(1:time,binaural_sig_WOLA(1:time,2))
+plot(1:time,binaural_sig(1:time,2))
+plot(1:time,binaural_sig_OLA(1:time,2))
+hold off
+legend('WOLA','time domain convolution','OLA')
+xlabel('timesamples')
+ylabel('Signal amplitude')
 %(Synthetizing with the original HRTF's contained in X (rhs of SOE))
 xL_1 =cat(1,zeros(3,1),x_1(1:(length(transf_tot)/2)-3,1));
 xR_1 = x_1((length(transf_tot)/2)+1:end,1);
