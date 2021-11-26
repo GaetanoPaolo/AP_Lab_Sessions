@@ -129,6 +129,8 @@ analwin = sqrt(hann(nfft,'periodic'));
 synthwin = sqrt(hann(nfft,'periodic')); 
 channels = 5;
 speeches = repmat(speech1_cut,1,channels);
+disp('WOLA input size')
+disp(size(speech1_cut))
 [X,f] = WOLA_analysis(speeches,fs_RIR,analwin,nfft,noverlap,g);
 x = WOLA_synthesis(X,synthwin,nfft,noverlap);
 x = repmat(x,1,2);
@@ -215,7 +217,7 @@ if sweetspotFlag == 1
         idx_nonzeroslines = sum(abs(H_new),2)> 0;
         H_1_new = H_new(idx_nonzeroslines,:);
         transf_tot_new = H_1_new*g;
-        synth_errors(i) = norm(transf_tot_new(1:738)-x_1);
+        synth_errors(i) = norm(transf_tot_new-x_1);
     end
     figure
     plot(1:10,synth_errors)

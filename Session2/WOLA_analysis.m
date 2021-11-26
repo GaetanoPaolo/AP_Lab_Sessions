@@ -34,15 +34,27 @@ M = size(x,2);
 X = zeros(N_half, L, M);
 X_orig = zeros(nfft, L, M);
 g_size = length(g)/M;
-for m = 0:M-1
-    G = fft(g(m*g_size+1:(m+1)*g_size),nfft);
-    for l = 0:L-1 % Frame index
-        xseg = x((l*nfft/noverlap)+1:(l*(nfft/noverlap)+nfft),m+1).*window;
-        xseg = fft(xseg,nfft).*G; %We believe that this multiplication is what gives the output a bad quality
-        X_orig(:,l+1,m+1) = xseg;
-        X(:,l+1,m+1) = xseg(1:N_half);
+if g==-1
+    for m = 0:M-1
+        for l = 0:L-1 % Frame index
+            xseg = x((l*nfft/noverlap)+1:(l*(nfft/noverlap)+nfft),m+1).*window;
+            xseg = fft(xseg,nfft); %We believe that this multiplication is what gives the output a bad quality
+            X_orig(:,l+1,m+1) = xseg;
+            X(:,l+1,m+1) = xseg(1:N_half);
+        end
+        X(:,:,m+1) = X(:,:,m+1);
     end
-    X(:,:,m+1) = X(:,:,m+1);
+else
+    for m = 0:M-1
+        G = fft(g(m*g_size+1:(m+1)*g_size),nfft);
+        for l = 0:L-1 % Frame index
+            xseg = x((l*nfft/noverlap)+1:(l*(nfft/noverlap)+nfft),m+1).*window;
+            xseg = fft(xseg,nfft).*G; %We believe that this multiplication is what gives the output a bad quality
+            X_orig(:,l+1,m+1) = xseg;
+            X(:,l+1,m+1) = xseg(1:N_half);
+        end
+        X(:,:,m+1) = X(:,:,m+1);
+    end
 end
 
 
