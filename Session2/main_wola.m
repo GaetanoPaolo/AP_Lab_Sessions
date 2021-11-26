@@ -1,6 +1,6 @@
 [speech, Fs] =audioread('../Speech_Signals/speech1.wav');
 speech = speech(1:5*Fs);
-nfft = 512;
+nfft = 2048;
 noverlap = 2;
 analwin = sqrt(hann(nfft,'periodic'));
 synthwin = sqrt(hann(nfft,'periodic')); 
@@ -34,14 +34,14 @@ speeches = repmat(speech,1,channels);
 % WOLA analysis
 [X,f] = WOLA_analysis(speeches,Fs,analwin,nfft,noverlap,g);
 
-%plotting spectrogram
-% magn_sq = abs(X).^2;
-% figure(2)
-% colormap(hot)
-% imagesc(magn_sq)
-% xlabel('Time windows')
-% ylabel('Freq Bins')
-% title('WOLA analysis spectrogram')
+% plotting spectrogram
+magn_sq = abs(X(:,:,1)).^2;
+figure(2)
+colormap(hot)
+imagesc(magn_sq)
+xlabel('Time windows')
+ylabel('Freq Bins')
+title('WOLA analysis spectrogram')
 
 load('../sim_environment/Computed_RIRs.mat')
 
@@ -64,5 +64,5 @@ synth_x = [sum(x_left,2) sum(x_right,2)];
 % hold on
 % plot(1:length(x_res),speech(1:length(x_res)))
 % plot(1:length(x_res),real(x_res))
-% synth_error = norm(speech(1:length(x_res))-x_res')
+synth_error = norm(speech(1:length(x_res))-x_res')
 

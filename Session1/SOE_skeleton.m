@@ -25,7 +25,7 @@ source_filename{1} = 'speech1.wav';
 % Noise flag for the noise perturbing SOE
 noiseFlag = 0;
 % Noise flag for sweetspot tests
-sweetspotFlag = 1;
+sweetspotFlag = 0;
 % Flag for OLA testing time comparison
 OLA_time = 0;
 % Number of loudspeakers
