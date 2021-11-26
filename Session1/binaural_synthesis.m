@@ -27,4 +27,4 @@ binaurals_sig1=binaurals_sig1_1+binaurals_sig1_2;
 binaurals_sig2=binaurals_sig2_1+binaurals_sig2_2;
 binaurals_sig3=binaurals_sig3_1+binaurals_sig3_2;
 binaurals_sig4=binaurals_sig4_1+binaurals_sig4_2;
-soundsc(binaurals_sig3, f_res)
+soundsc(binaurals_sig1, f_res)

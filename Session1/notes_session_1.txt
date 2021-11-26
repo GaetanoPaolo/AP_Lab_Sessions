@@ -1,0 +1,18 @@
+1.2.4: For 44.1kHz the micsigs are pretty much identical, 
+only a small delay separates both No difference visible for 8 kHz? Normally: Aliasing due to
+sampling freq lower than nyquist freq?
+Reduce this effect? 
+
+1.3.2: Binaural_sig2 and binaural_sig3 have one of each binaural speech isgnals that gets cancelled,
+and is inaudible compared to the overlapping one. In 2 this is caused by damping by factor 0.5, in 3 due to the delay.
+Binaural sig 4: filtering with HRTF renders room effect due to the RIR included
+
+1.4.2 J must be larger than 2: see tablet
+
+1.4.3: The HRTF delay is the inclusion of the physical sound propagation delay in the room in the model.
+
+1.4.9: Sounds will always arrive at the closest mic first
+
+1.4.10: Sweetspot below 5, due to RIR variations that make the g's sub optimal
+
+1.4.11: The noise applied to the H's gets compensated the LS optimisation of g's => robust to RIR modeling errors

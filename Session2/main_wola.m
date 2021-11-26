@@ -27,6 +27,12 @@ end
 figure(1)
 spectrogram(speech,analwin,noverlap,nfft)
 title('Spectrogram function')
+
+figure(2)
+transf = stft(speech, 'Window',analwin,'Overlaplength',D,'FFTLength',nfft);
+image(20*log10(abs(transf)))
+colormap jet
+
 g = load('g.mat');
 g = g.g;
 speeches = repmat(speech,1,channels);
@@ -35,13 +41,14 @@ speeches = repmat(speech,1,channels);
 [X,f] = WOLA_analysis(speeches,Fs,analwin,nfft,noverlap,g);
 
 %plotting spectrogram
-% magn_sq = abs(X).^2;
-% figure(2)
-% colormap(hot)
-% imagesc(magn_sq)
-% xlabel('Time windows')
-% ylabel('Freq Bins')
-% title('WOLA analysis spectrogram')
+%magn_sq = sum(X,3).*conj(sum(X,3));
+magn_sq = sum(X.*conj(X),3);
+figure(3)
+colormap(hot)
+imagesc(magn_sq)
+xlabel('Time windows')
+ylabel('Freq Bins')
+title('WOLA analysis spectrogram')
 
 load('../sim_environment/Computed_RIRs.mat')
 

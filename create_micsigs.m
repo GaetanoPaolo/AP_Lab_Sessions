@@ -50,7 +50,7 @@ end
 
 % Global Params:
 back_noise = zeros(max_length,mic_amount);
-mic = zeros(max_length,mic_amount);
+mic_noiseless = zeros(max_length,mic_amount);
 % Generate noise signals in mic
 for j = 1:mic_amount
     for i=1:noise_amount
@@ -66,9 +66,9 @@ for j=1:mic_amount
     for i =1:speaker_amount
         filt_speech= filt_speech + fftfilt(RIR_sources(:,j,i), resample_speech_signals(:,i));
     end
-    mic(:,j)=filt_speech+back_noise(:,j);
+    mic_noiseless(:,j)=filt_speech;
 end
-save('mic.mat','mic','fs_RIR');
+%save('mic.mat','mic','fs_RIR');
 figure
 hold on
 plot(1:max_length,mic(:,1));
