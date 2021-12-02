@@ -194,13 +194,8 @@ for l=2:N_frames % Time index
         [s_diff,I] =  sort(diag(D),'descend');
         %Q = Q(:,I);
         s_diff(1) = 1-(1/s_diff(1));
-<<<<<<< HEAD
-        s_diff(2:end) = 0;
-        F = inv(Q')*diag(s_diff)*Q';
-=======
         s_diff(2:end) =0;
         F = (Q')\(diag(s_diff)*Q');
->>>>>>> bdc89de385dca64ed6022f87b39f74e75b2789ea
           
         
         
