@@ -89,6 +89,7 @@ end
 %% SNR babble noise
 SNR_babbel = 10*log10(var(binaural_sig(:,1))/var(1.15*back_noise(:,1)));
 disp(SNR_babbel)
+
 babble_noise_scaled = 1.15*back_noise;
 %% generate uncorr noise
 uncorr_noise = randn(siglength*Fs_noise,1);
@@ -143,8 +144,8 @@ num_mics = 2;
 
 Rnn = cell(N_freqs,1);  Rnn(:) = {1e-6*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
 Ryy = cell(N_freqs,1);  Ryy(:) = {1e-6*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
-lambda = 0.995;                                                       % Forgetting factors for correlation matrices - can change
-SPP_thr = 0.95;                                                       % Threshold for SPP - can change
+lambda = 0.998;                                                       % Forgetting factors for correlation matrices - can change
+SPP_thr = 0.98;                                                       % Threshold for SPP - can change
 
 
 
@@ -190,7 +191,7 @@ for l=2:N_frames % Time index
         [Q,D] = eig(Ryy{k},Rnn{k});
         s_diff =  diag(D);
         s_diff(1) = 1-(1/s_diff(1));
-        s_diff(2:end) =0;
+        s_diff(2:end) = 0;
         F = inv(Q')*diag(s_diff)*Q';
           
         
