@@ -144,8 +144,10 @@ num_mics = 2;
 
 Rnn = cell(N_freqs,1);  Rnn(:) = {1e-6*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
 Ryy = cell(N_freqs,1);  Ryy(:) = {1e-6*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
-lambda = 0.998;                                                       % Forgetting factors for correlation matrices - can change
-SPP_thr = 0.98;                                                       % Threshold for SPP - can change
+
+lambda = 0.995;                                                       % Forgetting factors for correlation matrices - can change
+SPP_thr = 0.9;                                                       % Threshold for SPP - can change
+
 
 
 
@@ -173,8 +175,8 @@ for l=2:N_frames % Time index
 
         % ## Update the correlation matrices using the forgetting factor.
         % Threshold the SPP in order to distinguish between periods of speech and non-speech activity
-        speech_tresh = 0.9;
-        if SPP(k,l) > speech_tresh
+        
+        if SPP(k,l) > SPP_thr
             Ryy{k} = (lambda^2)*Ryy{k}+(1-lambda^2)*(Y_kl*Y_kl');
         else
             Rnn{k} = (lambda^2)*Rnn{k}+(1-lambda^2)*(N_kl*N_kl');
@@ -189,16 +191,22 @@ for l=2:N_frames % Time index
         % decomposition of the correlation matrices.
         
         [Q,D] = eig(Ryy{k},Rnn{k});
-        s_diff =  diag(D);
+        [s_diff,I] =  sort(diag(D),'descend');
+        %Q = Q(:,I);
         s_diff(1) = 1-(1/s_diff(1));
+<<<<<<< HEAD
         s_diff(2:end) = 0;
         F = inv(Q')*diag(s_diff)*Q';
+=======
+        s_diff(2:end) =0;
+        F = (Q')\(diag(s_diff)*Q');
+>>>>>>> bdc89de385dca64ed6022f87b39f74e75b2789ea
           
         
         
 
        
-        W_mvdr_mwfL(:,k) = F(1,:); %Taking the left microphone as a reference
+        W_mvdr_mwfL(:,k) = F(:,1); %Taking the left microphone as a reference
         
         % Filtering the noisy speech, the speech-only, and the noise-only.
         S_mvdr_mwfL_stft(k,l) = W_mvdr_mwfL(:,k)'* Y_kl(1:num_mics);
@@ -211,7 +219,7 @@ for l=2:N_frames % Time index
 end % end time frames
 toc
 
-%% Observe processed STFTs
+% Observe processed STFTs
 fs = fs_RIR;
 time = 0:1/fs:((length(x)-1)/fs);
 clow = -60; chigh = 10;
