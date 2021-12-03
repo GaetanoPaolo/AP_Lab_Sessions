@@ -29,12 +29,13 @@ figure(2); clf;
 
 %% FxLMS
 
-% M = 400;  % Length of secondary path (RIR)
-% L = 400;  % Adaptive filter length
+M = 400;  % Length of secondary path (RIR)
+L = 400;  % Adaptive filter length
 
-% mu = 0.5;   % Step size
+mu = 0.5;   % Step size
+delta = 5*10^(-5);
 
-% W = zeros(L,1); % Initialize adaptive filter
+W = zeros(L,1); % Initialize adaptive filter
     
 tic
 for n = 1:sigLenSample
@@ -42,12 +43,13 @@ for n = 1:sigLenSample
     % STEP 1 : Arrange the previous L + M − 1 samples of x(n) up until the
     % current sample, n, in an [M x L] Hankel matrix X_Hmat (this will be
     % use for the filtering operation)
-%     X_Hmat = 
+    temp = x(n-(L+M-1):n);
+    X_Hmat = hankel(temp);
 
     % STEP 2: Filter the signal x(n) with the adaptive filter w(n) to
     % generate loudspeaker signals y(n). Store the samples of y(n) into the
     % vector y
-%     y =
+    y = 
     
     % STEP 3: Compute the error signal e(n)
 %     e(n) =
