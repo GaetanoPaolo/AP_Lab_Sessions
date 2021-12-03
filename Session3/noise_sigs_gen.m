@@ -191,8 +191,9 @@ for l=2:N_frames % Time index
         % Computing the MWF filter using a generalised eigenvalue
         % decomposition of the correlation matrices.
         
-        [Q,D] = eig(Ryy{k},Rnn{k});
+        [V,D] = eig(Ryy{k},Rnn{k});
         [s_diff,I] =  sort(diag(D),'descend');
+        Q = inv(V)';
         Q = Q(:,I);
         s_diff(1) = 1-(1/s_diff(1));
         s_diff(2:end) =0;
@@ -215,11 +216,22 @@ for l=2:N_frames % Time index
 end % end time frames
 toc
 
-% Observe processed STFTs
+%% Observe processed STFTs
 fs = fs_RIR;
 time = 0:1/fs:((length(x)-1)/fs);
 clow = -60; chigh = 10;
 figure; imagesc(time,f/1000,mag2db(abs(y_STFT(:,:,1))), [clow, chigh]); colorbar; axis xy; set(gcf,'color','w');set(gca,'Fontsize',14); xlabel('Time (s)'), ylabel('Frequency (Hz)'), title('microphne signal, 1st mic');
 figure; imagesc(time,f/1000,mag2db(abs(S_mvdr_mwfL_stft(:,:,1))), [clow, chigh]); colorbar; axis xy; set(gcf,'color','w');set(gca,'Fontsize',14); xlabel('Time (s)'), ylabel('Frequency (Hz)'),title('Enhanced Signal L - MWF');
 
-
+%% WOLA synthesis
+y_filt_left = WOLA_synthesis(S_mvdr_mwfL_stft,analwin,nfft,noverlap);
+n_filt_left = WOLA_synthesis(N_mvdr_mwfL_stft,analwin,nfft,noverlap);
+x_filt_left = WOLA_synthesis(X_mvdr_mwfL_stft,analwin,nfft,noverlap);
+%% SNR computation
+noise_sum = uncorr_noise_scaled(:,1)+babble_noise_scaled(:,1);
+SNR_in = mag2db(rssq(binaural_sig(:,1))/rssq(noise_sum(:,1)));
+disp('SNR input')
+disp(SNR_in)
+SNR_out = mag2db(rssq(x_filt_left(:))/rssq(n_filt_left(:)));
+disp('SNR output')
+disp(SNR_out)
