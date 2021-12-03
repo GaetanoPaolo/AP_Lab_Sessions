@@ -89,6 +89,7 @@ end
 %% SNR babble noise
 SNR_babbel = 10*log10(var(binaural_sig(:,1))/var(1.15*back_noise(:,1)));
 disp(SNR_babbel)
+
 babble_noise_scaled = 1.15*back_noise;
 %% generate uncorr noise
 uncorr_noise = randn(siglength*Fs_noise,1);
@@ -141,10 +142,13 @@ set(gca,'Fontsize',14), xlabel('Time Frames'), ylabel('Frequency (Hz)'), title('
 %% MWF
 num_mics = 2;
 
-Rnn = cell(N_freqs,1);  Rnn(:) = {1e-6*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
-Ryy = cell(N_freqs,1);  Ryy(:) = {1e-6*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
-lambda = 0.995;                                                       % Forgetting factors for correlation matrices - can change
-SPP_thr = 0.9;                                                       % Threshold for SPP - can change
+Rnn = cell(N_freqs,1);  Rnn(:) = {1e-3*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
+Ryy = cell(N_freqs,1);  Ryy(:) = {1e-3*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
+
+lambda_n = 0.9;
+lambda_y = 0.2;                                                       % Forgetting factors for correlation matrices - can change
+SPP_thr = 0.98;                                                       % Threshold for SPP - can change
+
 
 
 
@@ -174,9 +178,9 @@ for l=2:N_frames % Time index
         % Threshold the SPP in order to distinguish between periods of speech and non-speech activity
         
         if SPP(k,l) > SPP_thr
-            Ryy{k} = (lambda^2)*Ryy{k}+(1-lambda^2)*(Y_kl*Y_kl');
+            Ryy{k} = (lambda_y^2)*Ryy{k}+(1-lambda_y^2)*(Y_kl*Y_kl');
         else
-            Rnn{k} = (lambda^2)*Rnn{k}+(1-lambda^2)*(N_kl*N_kl');
+            Rnn{k} = (lambda_n^2)*Rnn{k}+(1-lambda_n^2)*(N_kl*N_kl');
         end
         
         %Only check left mic for treshold, process both mics together
