@@ -142,11 +142,12 @@ set(gca,'Fontsize',14), xlabel('Time Frames'), ylabel('Frequency (Hz)'), title('
 %% MWF
 num_mics = 2;
 
-Rnn = cell(N_freqs,1);  Rnn(:) = {1e-6*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
-Ryy = cell(N_freqs,1);  Ryy(:) = {1e-6*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
+Rnn = cell(N_freqs,1);  Rnn(:) = {1e-3*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
+Ryy = cell(N_freqs,1);  Ryy(:) = {1e-3*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
 
-lambda = 0.995;                                                       % Forgetting factors for correlation matrices - can change
-SPP_thr = 0.9;                                                       % Threshold for SPP - can change
+lambda_n = 0.9;
+lambda_y = 0.2;                                                       % Forgetting factors for correlation matrices - can change
+SPP_thr = 0.98;                                                       % Threshold for SPP - can change
 
 
 
@@ -177,9 +178,9 @@ for l=2:N_frames % Time index
         % Threshold the SPP in order to distinguish between periods of speech and non-speech activity
         
         if SPP(k,l) > SPP_thr
-            Ryy{k} = (lambda^2)*Ryy{k}+(1-lambda^2)*(Y_kl*Y_kl');
+            Ryy{k} = (lambda_y^2)*Ryy{k}+(1-lambda_y^2)*(Y_kl*Y_kl');
         else
-            Rnn{k} = (lambda^2)*Rnn{k}+(1-lambda^2)*(N_kl*N_kl');
+            Rnn{k} = (lambda_n^2)*Rnn{k}+(1-lambda_n^2)*(N_kl*N_kl');
         end
         
         %Only check left mic for treshold, process both mics together
@@ -192,7 +193,7 @@ for l=2:N_frames % Time index
         
         [Q,D] = eig(Ryy{k},Rnn{k});
         [s_diff,I] =  sort(diag(D),'descend');
-        %Q = Q(:,I);
+        Q = Q(:,I);
         s_diff(1) = 1-(1/s_diff(1));
         s_diff(2:end) =0;
         F = (Q')\(diag(s_diff)*Q');
