@@ -1,4 +1,5 @@
 %% Create speech L
+addpath("../Session2")
 load('../sim_environment/Computed_RIRs.mat')
 load('../HRTF.mat') 
 source_filename{1} = 'speech1.wav';
@@ -135,19 +136,19 @@ xlabel('Time')
 title('Spectrogram combined sig')
 colorbar
 %% SPP
-[noisePowMat, SPP] = spp_calc(combined_sig(:,1),nfft,nfft/noverlap);
+[noisePowMat, SPP] = spp_calc(combined_sig(:,1),nfft,nfft/noverlap);%binaural_sig(1:80000,1)
 [N_freqs, N_frames] = size(y_STFT1);
 figure; imagesc(1:N_frames, f,SPP); colorbar; axis xy; set(gcf,'color','w');  
 set(gca,'Fontsize',14), xlabel('Time Frames'), ylabel('Frequency (Hz)'), title('Speech Presence Probability for ref mic');
 %% MWF
-num_mics = 2;
+num_mics = 2; %When using single channel, change this to 1, result is very poor in quality (-16dB SNR)
 
-Rnn = cell(N_freqs,1);  Rnn(:) = {1e-3*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
-Ryy = cell(N_freqs,1);  Ryy(:) = {1e-3*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
+Rnn = cell(N_freqs,1);  Rnn(:) = {(10e-3)*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
+Ryy = cell(N_freqs,1);  Ryy(:) = {(10e-3)*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
 
-lambda_n = 0.9;
-lambda_y = 0.2;                                                       % Forgetting factors for correlation matrices - can change
-SPP_thr = 0.98;                                                       % Threshold for SPP - can change
+lambda_n = 0.7;
+lambda_y = 0.8;                                                       % Forgetting factors for correlation matrices - can change
+SPP_thr = 0.9;                                                       % Threshold for SPP - can change
 
 
 
@@ -157,9 +158,15 @@ S_mvdr_mwfL_stft = zeros(N_freqs,N_frames);
 X_mvdr_mwfL_stft = zeros(N_freqs,N_frames);         
 N_mvdr_mwfL_stft = zeros(N_freqs,N_frames);  
 W_mvdr_mwfL = (1/num_mics)*ones(num_mics,N_freqs); 
+W_mvdr_mwfR = (1/num_mics)*ones(num_mics,N_freqs); 
+S_mvdr_mwfR_stft = zeros(N_freqs,N_frames); 
 
-
-
+count = sum(SPP > SPP_thr);
+noisy_frames = sum(count==0);
+SN_mvdr_mwfL_stft = zeros(N_freqs,noisy_frames);         
+n_ind = 2;
+SS_mvdr_mwfL_stft = zeros(N_freqs,N_frames-noisy_frames);
+s_ind = 2;
 
 % STFT Processing
 % Looping through each time frame and each frequency bin
@@ -180,11 +187,10 @@ for l=2:N_frames % Time index
         if SPP(k,l) > SPP_thr
             Ryy{k} = (lambda_y^2)*Ryy{k}+(1-lambda_y^2)*(Y_kl*Y_kl');
         else
-            Rnn{k} = (lambda_n^2)*Rnn{k}+(1-lambda_n^2)*(N_kl*N_kl');
+            Rnn{k} = (lambda_n^2)*Rnn{k}+(1-lambda_n^2)*(Y_kl*Y_kl');
         end
         
         %Only check left mic for treshold, process both mics together
-                
                 
 
         
@@ -204,15 +210,27 @@ for l=2:N_frames % Time index
 
        
         W_mvdr_mwfL(:,k) = F(:,1); %Taking the left microphone as a reference
-        
+        W_mvdr_mwfR(:,k) = F(:,2);
+
         % Filtering the noisy speech, the speech-only, and the noise-only.
         S_mvdr_mwfL_stft(k,l) = W_mvdr_mwfL(:,k)'* Y_kl(1:num_mics);
         X_mvdr_mwfL_stft(k,l) = W_mvdr_mwfL(:,k)'* X_kl(1:num_mics);
         N_mvdr_mwfL_stft(k,l) = W_mvdr_mwfL(:,k)'* N_kl(1:num_mics);
-         
+        if SPP(k,l) < SPP_thr
+            SN_mvdr_mwfL_stft(k,n_ind) = W_mvdr_mwfL(:,k)'*Y_kl(1:num_mics);
+        else
+            SS_mvdr_mwfL_stft(k,s_ind) = W_mvdr_mwfL(:,k)'*Y_kl(1:num_mics);
+        end
+
+        S_mvdr_mwfR_stft(k,l) = W_mvdr_mwfR(:,k)'*Y_kl(1:num_mics); 
 
         
     end % end freqs
+    if(count(l)==0)
+        n_ind = n_ind + 1;
+    else
+        s_ind = s_ind + 1;
+    end
 end % end time frames
 toc
 
@@ -221,10 +239,14 @@ fs = fs_RIR;
 time = 0:1/fs:((length(x)-1)/fs);
 clow = -60; chigh = 10;
 figure; imagesc(time,f/1000,mag2db(abs(y_STFT(:,:,1))), [clow, chigh]); colorbar; axis xy; set(gcf,'color','w');set(gca,'Fontsize',14); xlabel('Time (s)'), ylabel('Frequency (Hz)'), title('microphne signal, 1st mic');
+figure; imagesc(time,f/1000,mag2db(abs(SN_mvdr_mwfL_stft(:,:,1))), [clow, chigh]); colorbar; axis xy; set(gcf,'color','w');set(gca,'Fontsize',14); xlabel('Time (s)'), ylabel('Frequency (Hz)'),title('Enhanced Signal L - MWF');
 figure; imagesc(time,f/1000,mag2db(abs(S_mvdr_mwfL_stft(:,:,1))), [clow, chigh]); colorbar; axis xy; set(gcf,'color','w');set(gca,'Fontsize',14); xlabel('Time (s)'), ylabel('Frequency (Hz)'),title('Enhanced Signal L - MWF');
 
 %% WOLA synthesis
 y_filt_left = WOLA_synthesis(S_mvdr_mwfL_stft,analwin,nfft,noverlap);
+y_filt_right = WOLA_synthesis(S_mvdr_mwfL_stft,analwin,nfft,noverlap);
+yn_filt_left = WOLA_synthesis(SN_mvdr_mwfL_stft,analwin,nfft,noverlap);
+yy_filt_left = WOLA_synthesis(SS_mvdr_mwfL_stft,analwin,nfft,noverlap);
 n_filt_left = WOLA_synthesis(N_mvdr_mwfL_stft,analwin,nfft,noverlap);
 x_filt_left = WOLA_synthesis(X_mvdr_mwfL_stft,analwin,nfft,noverlap);
 %% SNR computation
@@ -232,6 +254,9 @@ noise_sum = uncorr_noise_scaled(:,1)+babble_noise_scaled(:,1);
 SNR_in = mag2db(rssq(binaural_sig(:,1))/rssq(noise_sum(:,1)));
 disp('SNR input')
 disp(SNR_in)
-SNR_out = mag2db(rssq(x_filt_left(:))/rssq(n_filt_left(:)));
+SNR_out = mag2db(rssq(yy_filt_left(:))/rssq(yn_filt_left(:)));
 disp('SNR output')
 disp(SNR_out)
+
+
+bin_filt = cat(2,y_filt_left,y_filt_right);
