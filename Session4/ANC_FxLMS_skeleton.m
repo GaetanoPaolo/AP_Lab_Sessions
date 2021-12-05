@@ -10,21 +10,29 @@ clear all;
 % close all
 
 % Load RIRs
-
+load('../sim_environment/Computed_RIRs_session4.mat');
 % Set length
-% sigLenSec = ;
+sigLenSec =0.5;
 
 
 %%
 % Plot the RIRs of the noise
+[len,~] = size(RIR_noise);
 figure(1); clf;
-
-%%
+subplot(2,1,1)
+plot(1:len,RIR_noise(:,1))
+subplot(2,1,2)
+plot(1:len,RIR_noise(:,2))
+%% Generate noisy mic signal
 
 % Read in the noise source (resample if necessary)
-
+[y_noise,Fs_noise] = audioread('../Speech_Signals/White_noise1.wav'); 
+resample_noise = resample(y_noise,fs_RIR,Fs_noise);
+filt_noise = fftfilt(RIR_noise(:,1),resample_noise);
+filt_noise = filt_noise(1:sigLenSec*fs_RIR);
 % Plot the noisy signal
 figure(2); clf;
+plot(1:size(filt_noise,1),filt_noise)
 
 
 %% FxLMS
@@ -32,39 +40,53 @@ figure(2); clf;
 M = 400;  % Length of secondary path (RIR)
 L = 400;  % Adaptive filter length
 
-mu = 0.5;   % Step size
+mu = 0.2;   % Step size
 delta = 5*10^(-5);
 
 W = zeros(L,1); % Initialize adaptive filter
-    
+sigLenSample = sigLenSec*fs_RIR;
+x = cat(1,zeros(L+M-1,1),resample_noise(1:sigLenSample));
+e = zeros(1,sigLenSample);
+h = RIR_sources(1:L,1,1);
 tic
 for n = 1:sigLenSample
 
     % STEP 1 : Arrange the previous L + M − 1 samples of x(n) up until the
     % current sample, n, in an [M x L] Hankel matrix X_Hmat (this will be
     % use for the filtering operation)
-    temp = x(n-(L+M-1):n);
-    X_Hmat = hankel(temp);
+    xseg = x(n:n+L+M-1); % current processed filtered noise segment
+    temp = flip(xseg);
+    half1 = temp(1:L)';
+    half2 = temp(L:end-1)';
+    X_Hmat = hankel(half1,half2);
 
     % STEP 2: Filter the signal x(n) with the adaptive filter w(n) to
     % generate loudspeaker signals y(n). Store the samples of y(n) into the
     % vector y
-    y = 
+    y =  W'*X_Hmat;
     
     % STEP 3: Compute the error signal e(n)
-%     e(n) =
+    e(n) =  filt_noise(n)+ h'*y';
+    
 
     % STEP 4: Pre-filter x(n) with the (estimated) RIRs to obtain the
     % filtered x(n), \bar{x}(n). Store the samples of \bar{x}(n) into
     % the vector xf
-%     xf = 
+    xf = transpose(h'*X_Hmat);
     
     % STEP 5: Update the filter w(n). Store the samples of w(n) into
     % the vector w
-%     w = 
+
+    W = W - (mu/(norm(xf,'fro')^2+delta))*xf*e(n);
 end
 toc
-
+%% Plotting Fx-NLMS outputs
+figure
+hold on 
+plot(1:sigLenSample,filt_noise)
+plot(1:sigLenSample,e)
+hold off
+legend('d(n)','e(n)')
 
 %%
 % Calculate the noise suppression
