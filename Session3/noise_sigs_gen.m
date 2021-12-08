@@ -1,6 +1,6 @@
 %% Create speech L
 addpath("../Session2")
-load('../sim_environment/Computed_RIRs.mat')
+load('../sim_environment/Computed_RIRs_session3.mat')
 load('../HRTF.mat') 
 source_filename{1} = 'speech1.wav';
 speechfilename = {'Speech_Signals/speech1.wav','Speech_Signals/speech2.wav','Speech_Signals/speech3.wav','Speech_Signals/speech4.wav','Speech_Signals/speech5.wav','Speech_Signals/speech6.wav','Speech_Signals/speech7.wav','Speech_Signals/speech8.wav'};
@@ -146,8 +146,8 @@ num_mics = 2; %When using single channel, change this to 1, result is very poor 
 Rnn = cell(N_freqs,1);  Rnn(:) = {(10e-3)*ones(num_mics,num_mics)};      % Noise Only (NO) corr. matrix. Initialize to small random values
 Ryy = cell(N_freqs,1);  Ryy(:) = {(10e-3)*ones(num_mics,num_mics)};      % Speech + Noise (SPN) corr. matrix. Initialize to small random values
 
-lambda_n = 0.7;
-lambda_y = 0.8;                                                       % Forgetting factors for correlation matrices - can change
+lambda_n = 0.6;
+lambda_y = 0.7;                                                       % Forgetting factors for correlation matrices - can change
 SPP_thr = 0.9;                                                       % Threshold for SPP - can change
 
 

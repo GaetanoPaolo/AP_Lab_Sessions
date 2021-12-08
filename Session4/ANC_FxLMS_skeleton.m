@@ -12,44 +12,30 @@ clear all;
 addpath("../Session2")
 
 % Load RIRs
-load('../sim_environment/Computed_RIRs.mat')
-load('../HRTF.mat') 
+load('../sim_environment/Computed_RIRs_session4.mat');
 % Set length
-J = size(RIR_sources,3);% Number of loudspeakers
-Lh = 400;
-sigLenSec = 5;
-sigLenSample = 5*fs_RIR;
-RIR = RIR_sources(1:Lh,:,:);
+sigLenSec =1;
 
 %%
 % Plot the RIRs of the noise
+[len,~] = size(RIR_noise);
 figure(1); clf;
-plot(1:length(RIR_noise(1:1500,1)),RIR_noise(1:1500,1))
 
-%%
+subplot(2,1,1)
+plot(1:len,RIR_noise(:,1))
+subplot(2,1,2)
+plot(1:len,RIR_noise(:,2))
+%% Generate noisy mic signal
 
 % Read in the noise source (resample if necessary)
-noisefilename = {'../Speech_Signals/Babble_noise1.wav','../Speech_Signals/White_noise1.wav'};
-noise_amount = size(RIR_noise,3);
-[response_length,mic_amount,speaker_amount] = size(RIR_sources);
-resample_noise_signals = [];
-max_length=sigLenSec*fs_RIR;
-for i = 1:noise_amount
-    if (i==1) 
-        [y_noise,Fs_noise] = audioread(noisefilename{i}); 
-        resample_noise = resample(y_noise,fs_RIR,Fs_noise);
-        resample_noise_signals = resample_noise(1:max_length,:);
-    else
-        [y_noise,Fs_noise] = audioread(noisefilename{i}); 
-        resample_noise = resample(y_noise,fs_RIR,Fs_noise);
-        resample_noise_signals = [resample_noise_signals resample_noise(1:max_length,1)];
-    end
-
-end
-
+[y_noise,Fs_noise] = audioread('../Speech_Signals/White_noise1.wav'); 
+resample_noise = resample(y_noise,fs_RIR,Fs_noise);
+filt_noise = fftfilt(RIR_noise(:,1),resample_noise);
+filt_noise = filt_noise(1:sigLenSec*fs_RIR);
 % Plot the noisy signal
 figure(2); clf;
-plot(1:length(resample_noise_signals),resample_noise_signals)
+plot(1:size(filt_noise,1),filt_noise)
+
 
 %% FxLMS
 
@@ -60,8 +46,12 @@ mu = 0.5;   % Step size
 delta = 5*10^(-5);
 
 W = zeros(L,1); % Initialize adaptive filter
-filt_noise = [zeros(L+M-1,1); resample_noise_signals];
-e = zeros(sigLenSample,1);    
+
+sigLenSample = sigLenSec*fs_RIR;
+x = cat(1,zeros(L+M-1,1),resample_noise(1:sigLenSample));
+e = zeros(1,sigLenSample);
+h = RIR_sources(1:L,1,4);
+d = filt_noise;
 
 tic
 for n = 1:sigLenSample
@@ -69,32 +59,43 @@ for n = 1:sigLenSample
     % STEP 1 : Arrange the previous L + M − 1 samples of x(n) up until the
     % current sample, n, in an [M x L] Hankel matrix X_Hmat (this will be
     % use for the filtering operation)
-    temp = filt_noise(n:n+(L+M-1));
-    X_Hmat = hankel(temp(1:L),temp(L+1:end));
-
+    xseg = x(n:n+L+M-1); % current processed filtered noise segment
+    temp = flip(xseg);
+    half1 = temp(1:L)';
+    half2 = temp(L:end-1)';
+    X_Hmat = hankel(half1,half2);
     % STEP 2: Filter the signal x(n) with the adaptive filter w(n) to
     % generate loudspeaker signals y(n). Store the samples of y(n) into the
     % vector y
-    y = X_Hmat*W;
-    
+
+    y =  X_Hmat*W;
     % STEP 3: Compute the error signal e(n)
-    e(n) = h'*y;
+    e(n) = d(n) + h'*y; 
+    
 
     % STEP 4: Pre-filter x(n) with the (estimated) RIRs to obtain the
     % filtered x(n), \bar{x}(n). Store the samples of \bar{x}(n) into
     % the vector xf
-    xf = temp; %Need the correct RIRs 
+
+    xf = X_Hmat*h;
     
     % STEP 5: Update the filter w(n). Store the samples of w(n) into
     % the vector w
-    w(n) = w(n-1) - xf*e(n)*mu/(norm(xf,'fro')+delta)
+
+    W = W - (mu/(norm(xf)^2+delta))*xf*e(n);
 end
 toc
-
+%% Plotting Fx-NLMS outputs
+figure
+hold on 
+plot(1:sigLenSample,filt_noise)
+plot(1:sigLenSample,e)
+hold off
+legend('d(n)','e(n)')
 
 %%
 % Calculate the noise suppression
-
+NSP = 10*log10(mean(e.^2)/mean(d.^2))
 
 %%
 % In the existing plot of the noisy signal, superimpose the error signal to
