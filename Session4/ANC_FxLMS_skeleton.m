@@ -14,7 +14,7 @@ addpath("../Session2")
 % Load RIRs
 load('../sim_environment/Computed_RIRs_session4.mat');
 % Set length
-sigLenSec =1;
+sigLenSec =10;
 
 %%
 % Plot the RIRs of the noise
@@ -39,10 +39,10 @@ plot(1:size(filt_noise,1),filt_noise)
 
 %% FxLMS
 
-M = 400;  % Length of secondary path (RIR)
-L = 400;  % Adaptive filter length
+M = 70;  % Length of secondary path (RIR)
+L = 600;  % Adaptive filter length
 
-mu = 0.5;   % Step size
+mu = 0.14;   % Step size
 delta = 5*10^(-5);
 
 W = zeros(L,1); % Initialize adaptive filter
@@ -50,7 +50,7 @@ W = zeros(L,1); % Initialize adaptive filter
 sigLenSample = sigLenSec*fs_RIR;
 x = cat(1,zeros(L+M-1,1),resample_noise(1:sigLenSample));
 e = zeros(1,sigLenSample);
-h = RIR_sources(1:L,1,4);
+h = RIR_sources(1:M,1,4);
 d = filt_noise;
 
 tic
@@ -68,9 +68,9 @@ for n = 1:sigLenSample
     % generate loudspeaker signals y(n). Store the samples of y(n) into the
     % vector y
 
-    y =  X_Hmat*W;
+    y =  W'*X_Hmat;
     % STEP 3: Compute the error signal e(n)
-    e(n) = d(n) + h'*y; 
+    e(n) = d(n) + h'*y'; 
     
 
     % STEP 4: Pre-filter x(n) with the (estimated) RIRs to obtain the
@@ -97,8 +97,10 @@ legend('d(n)','e(n)')
 % Calculate the noise suppression
 NSP = 10*log10(mean(e.^2)/mean(d.^2))
 
-%%
+%% 
 % In the existing plot of the noisy signal, superimpose the error signal to
 % appreciate the noise cancellation
+%4.1.7: The error e(n) doesnt go to zero, there is too much variability in the
+%noise to be cancelled
 
 figure(2); hold on;
