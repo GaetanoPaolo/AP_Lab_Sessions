@@ -46,8 +46,8 @@ plot(1:size(filt_noise,1),filt_noise)
 
 %% MFxLMS
 
-M = 400;  % Length of secondary path (RIR)
-L = 400;  % Adaptive filter length
+M = 80;  % Length of secondary path (RIR)
+L = 600;  % Adaptive filter length
 
 mu = 0.5;   % Step size
 delta = 5*10^(-5);
