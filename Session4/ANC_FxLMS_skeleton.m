@@ -12,11 +12,11 @@ clear all;
 addpath("../Session2")
 
 % Load RIRs
-load('../sim_environment/Computed_RIRs_session4.mat');
+load('../sim_environment/Computed_RIRs_session4line.mat');
 % Set length
 sigLenSec = 10;
 
-speakersel = 3;
+speakersel = 5;
 
 
 %%

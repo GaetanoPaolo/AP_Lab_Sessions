@@ -20,7 +20,7 @@ load('../sim_environment/Computed_RIRs_session4.mat');
 sigLenSec =10;
 % Number of speakers
 speakers = size(RIR_sources,3);
-
+AUDIO_SPEECH_3D = 1;
 %%
 % Plot the RIRs of the noise
 [len,J] = size(RIR_noise);
@@ -43,13 +43,91 @@ filt_noise = [filt_noiseL filt_noiseR];
 % Plot the noisy signal
 figure(2); clf;
 plot(1:size(filt_noise,1),filt_noise)
+%% Generate binaural sig
+if AUDIO_SPEECH_3D
+    % Load measured HRTFs
+    load('../HRTF.mat') 
 
+    % Define the signal length
+    siglength = 10;
+
+
+    % Define the lengths of RIRs and g filters
+    Lh = 901; % Length of impulse responses of listening room
+    Lg = 2*(Lh-1)/(speakers-2);      % Length of filters g_j
+
+    % Truncate impulse response to reduce computational complexity
+    RIR = RIR_sources(1:Lh,:,:);
+
+    % Calculate delay for SOE
+    Delta=ceil(sqrt(room_dim(1)^2+room_dim(2)^2)*fs_RIR/340);
+
+    % Define the Toeplitz matrices for left and right ear (left side of SOE)
+    [~,mic,speaker] = size(RIR_sources);
+    HL =[];
+    HR = [];
+    for j = 1:speaker
+        temp_mat = toeplitz(RIR(:,1,j),zeros(Lg,1));
+        HL = [HL temp_mat];
+    end
+    for j = 1:speaker
+        temp_mat = toeplitz(RIR(:,2,j),zeros(Lg,1));
+        HR = [HR temp_mat];
+    end
+    % Define the HRTFs for left and right ear (right side of SOE) from the
+    % loaded HRTF
+    xL_undelayed = HRTF(:,1); % Left ear
+    xR_undelayed = HRTF(:,2); % Right ear
+    xL_delayed = cat(1,zeros(Delta,1),xL_undelayed(Delta+1:Lh,1));
+    xR_delayed = cat(1,zeros(Delta,1),xR_undelayed(Delta+1:Lh,1));
+
+    % Construct H (from HL and HR) and x (from xL and xR) and remove all-zero rows in H, and the corresponding elements in x
+    H = cat(1,HL,HR);
+    x = cat(1,xL_delayed,xR_delayed);
+    [rows,cols]=size(H);
+    zerows = zeros(1,rows);
+
+    idx_nonzeroslines = sum(abs(H),2)> 0;
+    H_1 = H(idx_nonzeroslines,:);
+    x_1 = x(idx_nonzeroslines,:);
+
+    % Solve the SOE
+    g = H_1\x_1;
+    % Generate desired speech 
+    % importing speech signal
+    speech1 = audioread('../Speech_Signals/speech1.wav');
+    speech1_res = resample(speech1,8000,44100);
+    %filtspeech_res = fftfilt(RIR_sources(:,1,speakersel),speech1_res);
+    %filtspeech_res = filtspeech_res(1:sigLenSec*fs_RIR);
+    speech_cut = speech1_res(1:sigLenSec*fs_RIR);
+
+    transf_tot = H_1*g;
+    transf_L = transf_tot(1:length(transf_tot)/2,:);
+    transf_R = transf_tot(length(transf_tot)/2+1:end,:);
+    convL = fftfilt(transf_L,speech_cut);
+    convR = fftfilt(transf_R,speech_cut);
+    binaural_sig = [convL convR];
+    % Achieve 0 dB between left binaural sig and  left noise
+    SNR_left = 1;
+    count = 1;
+    while SNR_left > 0.001
+        count  = count +1;
+        SNR_left = snr((0.9999^(count))*convL, filt_noiseL);
+    end
+    disp('Final SNR')
+    disp(SNR_left)
+    disp('Signal scaling')
+    disp(0.9999^count)
+    sig_scale = 0.9999^count;
+    binaural_sig_scaled = [convL*sig_scale, convR*sig_scale];
+end
 %% MFxLMS
 
 M = 80;  % Length of secondary path (RIR)
 L = 600;  % Adaptive filter length
 
-mu = 0.5;   % Step size
+%mu = 0.5;   % Step size
+mu = 0.1;
 delta = 5*10^(-5);
 
 sigLenSample = sigLenSec*fs_RIR;
@@ -98,6 +176,10 @@ for n=1:sigLenSample
         e_L(n) = e_L(n)+hL(:,k)'*y(k,:)';
         e_R(n) = e_R(n)+hR(:,k)'*y(k,:)';
     end
+    if AUDIO_SPEECH_3D
+        e_L(n) = e_L(n)+ binaural_sig_scaled(n,1);
+        e_R(n) = e_R(n)+ binaural_sig_scaled(n,2);
+    end
 
     % STEP 4: Pre-filter x(n) with the (estimated) RIRs to obtain the
     % filtered x(n), \bar{x}(n). Store the samples in the appropriate form.
@@ -127,12 +209,47 @@ figure
 hold on 
 plot(1:sigLenSample,filt_noise(:,1))
 plot(1:sigLenSample,e_L)
+if AUDIO_SPEECH_3D
+    plot(1:sigLenSample, binaural_sig_scaled(:,1))
+end
 hold off
-legend('d(n)','e(n)')
-
+if AUDIO_SPEECH_3D
+    legend('d(n)','e(n)','binaural left')
+else
+    legend('d(n)','e(n)')
+end
+title('Left filtered noise and error')
+xlabel('Amplitude')
+ylabel('Time')
 figure
 hold on 
 plot(1:sigLenSample,filt_noise(:,2))
 plot(1:sigLenSample,e_R)
+if AUDIO_SPEECH_3D
+    plot(1:sigLenSample, binaural_sig_scaled(:,2))
+end
 hold off
-legend('d(n)','e(n)')
+if AUDIO_SPEECH_3D
+    legend('d(n)','e(n)','binaural right')
+else
+    legend('d(n)','e(n)')
+end
+title('Right filtered noise and error')
+xlabel('Amplitude')
+ylabel('Time')
+
+% How does the convergence of the algorithm compare to the noise only case? How do you
+%expect this would be affected in practice?: In noise only time sequences,
+%the convergence is similar to the noise only case. However, it is visible
+%that the added 3D speech has an amplifying effect when the speech is
+%acitve, especially towards the end of an utterance (see
+%where_it_goes_bad). This might result in distortion/cracking noises at the
+%end of words in practice. The cause might be the strong errors at the
+%beginning of the word which have repercussions on the weights and cause
+%regular overshoots of the noise + binaural speech at the end of the
+%word.Lowering the learning rate mu from 0.5 to 0.1 strongly reduces this
+%effect (as the abrupt changes at start of the speech are smoothed), but
+%this results in a slower convergence at the beginnning of the audio.
+
+
+
