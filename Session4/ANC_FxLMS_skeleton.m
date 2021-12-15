@@ -12,21 +12,24 @@ clear all;
 addpath("../Session2")
 
 % Load RIRs
-load('../sim_environment/Computed_RIRs_session4.mat');
+load('../sim_environment/Computed_RIRs_session4line.mat');
 % Set length
 sigLenSec = 10;
 
-speakersel = 3;
+speakersel = 5;
+
 
 %%
 % Plot the RIRs of the noise
 [len,~] = size(RIR_noise);
 figure(1); clf;
-
 subplot(2,1,1)
 plot(1:len,RIR_noise(:,1))
 subplot(2,1,2)
 plot(1:len,RIR_noise(:,2))
+[len2,~,~] = size(RIR_sources);
+figure(2); clf;
+plot(1:800,RIR_sources(1:800,1,1));
 %% Generate noisy mic signal
 
 % Read in the noise source (resample if necessary)
@@ -48,6 +51,7 @@ speech_cut = speech1_res(1:sigLenSec*fs_RIR);
 
 
 %% FxLMS
+
 
 M = 80;  % Length of secondary path (RIR)
 L = 600;  % Adaptive filter length
@@ -84,6 +88,7 @@ for n = 1:sigLenSample
     % generate loudspeaker signals y(n). Store the samples of y(n) into the
     % vector y
 
+
     yalt =  W'*X_Hmat;
     y = yalt + W*speech_cut(n:n+M-1)'; 
     % STEP 3: Compute the error signal e(n)
@@ -95,7 +100,7 @@ for n = 1:sigLenSample
     % the vector xf
 
     xf = X_Hmat*h;
-    
+    %xf = fftfilt(h,xseg);
     % STEP 5: Update the filter w(n). Store the samples of w(n) into
     % the vector w
 
@@ -109,6 +114,12 @@ plot(1:sigLenSample,filt_noise)
 plot(1:sigLenSample,e)
 hold off
 legend('d(n)','e(n)')
+
+%% checking maximum mu
+xf = fftfilt(h,resample_noise(1:sigLenSample));
+Pxf = rms(xf)^2;
+mu_max = 2/((L+2*80000)*Pxf)
+
 
 %%
 % Calculate the noise suppression
