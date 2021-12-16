@@ -66,7 +66,7 @@ noisefilename = {'../Speech_Signals/Babble_noise1.wav','../Speech_Signals/White_
 noise_amount = size(RIR_noise,3);
 [response_length,mic_amount,speaker_amount] = size(RIR_sources);
 resample_noise_signals = [];
- %filtered time window in seconds
+%filtered time window in seconds
 max_length=siglength*fs_RIR;
 for i = 1:noise_amount
     if (i==1) 

@@ -90,7 +90,7 @@ for n = 1:sigLenSample
 
 
     yalt =  W'*X_Hmat;
-    y = yalt + W*speech_cut(n:n+M-1)'; 
+    y = yalt + speech_cut(n:n+M-1)'; 
     % STEP 3: Compute the error signal e(n)
     e(n) = d(n) + h'*y'; 
     e_alt(n) = d(n) + h'*yalt';
